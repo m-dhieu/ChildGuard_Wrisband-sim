@@ -1,0 +1,9 @@
+# Mosquitto ACL file
+
+# Allow all connections from localhost
+user anonymous
+topic readwrite #
+
+# Allow all authenticated users
+user *
+topic readwrite #
