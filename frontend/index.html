@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChildGuard - لوحة التحكم الرئيسية</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="i18n.js"></script>
+</head>
+<body data-theme="light" data-lang="ar">
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <i class="fas fa-child icon"></i>
+                <div class="header-title">
+                    <h1 data-i18n="app-title">ChildGuard Wristband</h1>
+                    <p class="subtitle" data-i18n="app-subtitle">نظام حماية الأطفال</p>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button id="langToggle" class="header-btn" title="تبديل اللغة">
+                    <i class="fas fa-language"></i>
+                    <span class="btn-label" data-i18n="lang-toggle">عربي</span>
+                </button>
+                <button id="darkToggle" class="header-btn" title="تبديل الوضع الليلي">
+                    <i class="fas fa-moon"></i>
+                    <span class="btn-label" data-i18n="dark-toggle">ليلي</span>
+                </button>
+                <div class="user-menu">
+                    <i class="fas fa-user-circle"></i>
+                    <div class="user-dropdown">
+                        <span data-i18n="user-greeting">مرحباً، حارس</span>
+                        <button class="logout-btn" data-i18n="logout">تسجيل الخروج</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Global Alert Banner -->
+    <div id="alertBanner" class="alert-banner hidden" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="alert-content">
+            <i class="fas fa-exclamation-triangle alert-icon" aria-hidden="true"></i>
+            <div class="alert-text">
+                <span id="alertMsg"></span>
+            </div>
+            <button id="ackAlert" class="alert-ack-btn" title="تأكيد التنبيه" aria-label="تأكيد التنبيه">
+                <i class="fas fa-check" aria-hidden="true"></i>
+                <span data-i18n="alert-ack">تأكيد</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Network Status Indicator -->
+    <div id="networkStatus" class="network-status online" aria-live="polite" aria-label="حالة الاتصال">
+        <span class="network-status-dot"></span>
+        <span id="networkStatusText" data-i18n="network-online">متصل</span>
+    </div>
+    
+    <main class="main dashboard-container" role="main">
+        <div class="device-selector">
+            <label class="selector-label" for="deviceSelect" data-i18n="select-child">اختر الطفل:</label>
+            <select id="deviceSelect" class="device-select" aria-label="اختيار الطفل">
+                <option value="device1" data-i18n-opt="child-1">الطفل 1 - أحمد</option>
+                <option value="device2" data-i18n-opt="child-2">الطفل 2 - محمد</option>
+                <option value="device3" data-i18n-opt="child-3">الطفل 3 - علي</option>
+            </select>
+        </div>
+        
+        <div class="dashboard-grid" role="region" aria-label="لوحة التحكم الرئيسية">
+            <!-- Live Map with Geofence Drawing -->
+            <div class="card full-span" role="region" aria-label="خريطة الموقع الحي">
+                <div class="card-header">
+                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                    <h3 data-i18n="map-title">الموقع الحي والمنطقة الآمنة</h3>
+                    <button id="drawGeofence" class="header-icon-btn" title="رسم منطقة آمنة" aria-label="رسم منطقة آمنة جديدة">
+                        <i class="fas fa-draw-polygon" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div id="map" class="map-container" role="img" aria-label="خريطة توضح موقع الطفل الحالي"></div>
+                <div class="map-overlay">
+                    <div class="overlay-item">
+                        <i class="fas fa-battery-full" id="batteryIcon" aria-hidden="true"></i>
+                        <span id="battery" aria-label="مستوى البطارية">85%</span>
+                    </div>
+                    <div class="overlay-item">
+                        <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                        <span id="statusText" data-i18n="status-safe" aria-label="حالة الأمان">آمن</span>
+                    </div>
+                    <div class="overlay-item">
+                        <i class="fas fa-signal" aria-hidden="true"></i>
+                        <span id="signalStrength" aria-label="قوة الإشارة">4G</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vitals Charts -->
+            <div class="card" role="region" aria-label="مخطط معدل القلب والحركة">
+                <div class="card-header">
+                    <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                    <h3 data-i18n="vitals-title">معدل القلب والحركة</h3>
+                </div>
+                <canvas id="vitalsChart" aria-label="رسم بياني لمعدل ضربات القلب والحركة"></canvas>
+            </div>
+            
+            <!-- Quick Controls -->
+            <div class="card" role="region" aria-label="أزرار التحكم السريع">
+                <div class="card-header">
+                    <i class="fas fa-cogs" aria-hidden="true"></i>
+                    <h3 data-i18n="controls-title">التحكم السريع</h3>
+                </div>
+                <button id="panicBtn" class="panic-btn" title="اضغط للإبلاغ عن حالة طوارئ" aria-label="زر الطوارئ - اضغط للإبلاغ عن حالة طوارئ فورية">
+                    <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                    <span data-i18n="panic-btn">زر الطوارئ (SOS)</span>
+                </button>
+                <button id="photoBtn" class="control-btn" title="التقط صور يدوية للدليل" aria-label="إضافة صور يدوية كدليل">
+                    <i class="fas fa-camera" aria-hidden="true"></i>
+                    <span data-i18n="photo-btn">صور يدوية</span>
+                </button>
+                <button id="configBtn" class="control-btn" title="تعديل الإعدادات" aria-label="فتح قائمة الإعدادات">
+                    <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                    <span data-i18n="config-btn">الإعدادات</span>
+                </button>
+            </div>
+            
+            <!-- Recent Alerts + History -->
+            <div class="card full-height" role="region" aria-label="سجل التنبيهات الحالية والسابقة">
+                <div class="card-header">
+                    <i class="fas fa-bell" aria-hidden="true"></i>
+                    <h3 data-i18n="alerts-title">التنبيهات</h3>
+                    <span class="alert-badge" id="alertCount" aria-live="polite" aria-label="عدد التنبيهات">0</span>
+                </div>
+                <div id="alertList" role="list">
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle" aria-hidden="true"></i>
+                        <p data-i18n="no-alerts">لا توجد تنبيهات. الطفل آمن.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="script.js"></script>
+    <script src="device-simulator.js"></script>
+    <script src="dummy-data.js"></script>
+    <script>
+        // Auto-start dummy data emitter on page load for testing
+        window.addEventListener('load', () => {
+            // Check if we're in test mode (can be toggled in DevTools console)
+            if (localStorage.getItem('childguard-test-mode') !== 'false') {
+                console.log('🧪 ChildGuard Test Mode: Starting dummy data emitter...');
+                console.log('ℹ️  Commands available:');
+                console.log('  - startDummyDataEmitter(intervalMs, deviceId) - Start emitting test data');
+                console.log('  - stopDummyDataEmitter() - Stop emitting test data');
+                console.log('  - triggerDummyStressEvent() - Manually trigger heart rate spike');
+                console.log('  - triggerDummyMotionEvent() - Manually trigger motion alert');
+                console.log('  - getDummySimulatorState() - View current simulator state');
+                console.log('  - localStorage.setItem("childguard-test-mode", "false") - Disable auto-start');
+                
+                // Start emitting telemetry every 2 seconds
+                startDummyDataEmitter(2000, 'device1');
+                console.log('✅ Dummy data emitter started (2-second interval)');
+            }
+        });
+
+        // PWA Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+        
+        // Language Toggle
+        document.getElementById('langToggle').addEventListener('click', () => {
+            const newLang = i18n.getLang() === 'ar' ? 'en' : 'ar';
+            i18n.setLang(newLang);
+            location.reload();
+        });
+        
+        // Dark Mode Toggle
+        document.getElementById('darkToggle').addEventListener('click', () => {
+            const currentTheme = document.body.dataset.theme;
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.dataset.theme = newTheme;
+            localStorage.setItem('childguard-theme', newTheme);
+        });
+        
+        // Load saved theme
+        window.addEventListener('load', () => {
+            const savedTheme = localStorage.getItem('childguard-theme') || 'light';
+            document.body.dataset.theme = savedTheme;
+        });
+    </script>
+
+    <!-- Login Modal (Hidden by default) -->
+    <div id="loginModal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 data-i18n="login-title">تسجيل الدخول</h2>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginPhone" data-i18n="phone-label">رقم الهاتف</label>
+                        <input type="tel" id="loginPhone" class="form-control" placeholder="+249123456789" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword" data-i18n="password-label">كلمة المرور</label>
+                        <input type="password" id="loginPassword" class="form-control" placeholder="••••••" required>
+                    </div>
+                    <div id="loginError" class="alert-danger" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" data-i18n="login-button">دخول</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>

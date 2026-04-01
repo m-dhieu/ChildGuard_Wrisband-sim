@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChildGuard Chrome Login Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 { margin: 0; font-size: 32px; }
+        .header p { margin: 10px 0 0 0; opacity: 0.9; }
+        .content {
+            padding: 40px;
+        }
+        .test-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-card h3 { margin-top: 0; color: #333; }
+        .test-card p { margin: 10px 0; color: #666; }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 10px 10px 10px 0;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .button-secondary {
+            background: #e9ecef;
+            color: #333;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-left: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+        }
+        .checklist li.pass {
+            border-left-color: #28a745;
+            background: #f1f9f6;
+        }
+        .checklist li.fail {
+            border-left-color: #dc3545;
+            background: #fdf6f6;
+        }
+        .checklist li:before {
+            content: '✓';
+            margin-right: 10px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .checklist li.fail:before {
+            content: '✗';
+            color: #dc3545;
+        }
+        .divider {
+            margin: 30px 0;
+            border-top: 2px solid #e9ecef;
+        }
+        .step {
+            display: flex;
+            margin: 20px 0;
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 ChildGuard Chrome Login Test</h1>
+            <p>Comprehensive diagnostic for Chrome CORS and fetch issues</p>
+        </div>
+
+        <div class="content">
+            <!-- QUICK START -->
+            <div class="test-card">
+                <h3>🚀 Quick Start - Chrome Login Test</h3>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <strong>Enter Credentials</strong>
+                        <label>Phone:</label>
+                        <input type="text" id="phone" value="+249123456789" placeholder="Phone">
+                        <label>Password:</label>
+                        <input type="password" id="password" value="admin123" placeholder="Password">
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <strong>Run All Tests</strong><br>
+                        <button onclick="runAllTests()">▶ Run All Tests</button>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <strong>Check Results Below</strong><br>
+                        <p>Look for ✗ marks and fix issues before trying main login</p>
+                    </div>
+                </div>
+                <div id="quickResult"></div>
+            </div>
+
+            <!-- CORS TEST -->
+            <div class="test-card">
+                <h3>🔗 CORS Configuration Test</h3>
+                <p>Verifies that browser CORS preflight passes</p>
+                <button onclick="testCORS()">Test CORS Preflight</button>
+                <div id="corsResult"></div>
+            </div>
+
+            <!-- BACKEND TEST -->
+            <div class="test-card">
+                <h3>🏥 Backend Health Test</h3>
+                <p>Checks if backend API is responding</p>
+                <button onclick="testBackendHealth()">Test Backend Health</button>
+                <div id="healthResult"></div>
+            </div>
+
+            <!-- LOGIN TEST -->
+            <div class="test-card">
+                <h3>🔑 Login Endpoint Test</h3>
+                <p>Tests the actual login with your credentials</p>
+                <button onclick="testLogin()">Test Login</button>
+                <button class="button-secondary" onclick="testLoginVerbose()">Test Login (Verbose)</button>
+                <div id="loginResult"></div>
+            </div>
+
+            <!-- BROWSER STATE -->
+            <div class="test-card">
+                <h3>📊 Browser State Check</h3>
+                <p>Verifies browser configuration and state</p>
+                <button onclick="checkBrowserState()">Check State</button>
+                <div id="stateResult"></div>
+            </div>
+
+            <!-- CONSOLE LOGS -->
+            <div class="test-card">
+                <h3>📝 Console Logs</h3>
+                <p>Captured console output (Open DevTools F12 → Console to see more)</p>
+                <button onclick="showConsoleLogs()">Show Logs</button>
+                <button class="button-secondary" onclick="clearConsoleLogs()">Clear Logs</button>
+                <div id="logsResult"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- TROUBLESHOOTING -->
+            <div class="test-card">
+                <h3>🔧 Chrome-Specific Troubleshooting</h3>
+                <ul class="checklist">
+                    <li id="check-cors">CORS headers present</li>
+                    <li id="check-network">Network connectivity</li>
+                    <li id="check-fetch">Fetch API working</li>
+                    <li id="check-json">JSON parsing working</li>
+                    <li id="check-storage">LocalStorage available</li>
+                    <li id="check-credentials">Valid credentials</li>
+                </ul>
+            </div>
+
+            <!-- INSTRUCTIONS -->
+            <div class="test-card">
+                <h3>📋 Instructions to Fix Chrome Issue</h3>
+                <ol>
+                    <li><strong>Open DevTools</strong>: Press F12 in Chrome</li>
+                    <li><strong>Go to Console</strong>: Click "Console" tab</li>
+                    <li><strong>Run this test page</strong>: Click "Run All Tests" button above</li>
+                    <li><strong>Look for ✗ marks</strong>: Each red X indicates an issue</li>
+                    <li><strong>Note error messages</strong>: Take screenshots of errors</li>
+                    <li><strong>Try main login</strong>: Go to http://localhost:8000 after tests pass</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let consoleLogs = [];
+        
+        // Capture console
+        const origLog = console.log, origError = console.error, origWarn = console.warn;
+        console.log = function(...args) { 
+            consoleLogs.push({ type: 'log', msg: args.join(' ') });
+            origLog.apply(console, args);
+        };
+        console.error = function(...args) {
+            consoleLogs.push({ type: 'error', msg: args.join(' ') });
+            origError.apply(console, args);
+        };
+        console.warn = function(...args) {
+            consoleLogs.push({ type: 'warn', msg: args.join(' ') });
+            origWarn.apply(console, args);
+        };
+
+        async function runAllTests() {
+            const resultDiv = document.getElementById('quickResult');
+            resultDiv.innerHTML = '<div class="result-box result-info">Running all tests...</div>';
+            
+            let results = [];
+            
+            // Test 1: CORS
+            results.push(await testCORSAsync());
+            
+            // Test 2: Health
+            results.push(await testHealthAsync());
+            
+            // Test 3: Login
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            results.push(await testLoginAsync(phone, password));
+            
+            // Test 4: Browser State
+            results.push(testBrowserStateCheck());
+            
+            // Display results
+            let html = '<div class="result-box result-info">';
+            html += '---------------------------------------\n';
+            html += '   ALL TESTS COMPLETED\n';
+            html += '----------------------------------------\n\n';
+            
+            let passCount = 0, failCount = 0;
+            results.forEach((r, i) => {
+                const status = r.pass ? '✓ PASS' : '✗ FAIL';
+                const color = r.pass ? '✓' : '✗';
+                html += `${color} ${r.name}: ${status}\n`;
+                if (r.message) html += `  → ${r.message}\n`;
+                if (r.pass) passCount++; else failCount++;
+            });
+            
+            html += '\n───────────────────────────────────────\n';
+            html += `Results: ${passCount} passed, ${failCount} failed\n`;
+            
+            if (failCount === 0) {
+                html += '\n✓ ALL TESTS PASSED! Try logging in at http://localhost:8000\n';
+                resultDiv.className = 'result-box result-success';
+            } else {
+                html += `\n✗ ${failCount} test(s) failed. See details below.\n`;
+                resultDiv.className = 'result-box result-error';
+            }
+            
+            html += '-----------------------------------------</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        async function testCORSAsync() {
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'http://localhost:8000',
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'content-type'
+                    }
+                });
+                
+                const corsOrigin = response.headers.get('access-control-allow-origin');
+                const corsMethods = response.headers.get('access-control-allow-methods');
+                
+                if (corsOrigin && corsMethods) {
+                    return {
+                        pass: true,
+                        name: 'CORS Configuration',
+                        message: `Origin: ${corsOrigin}, Methods: ${corsMethods}`
+                    };
+                } else {
+                    return {
+                        pass: false,
+                        name: 'CORS Configuration',
+                        message: 'Missing CORS headers'
+                    };
+                }
+            } catch (error) {
+                return {
+                    pass: false,
+                    name: 'CORS Configuration',
+                    message: error.message
+                };
+            }
+        }
+
+        async function testHealthAsync() {
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'healthy') {
+                    return {
+                        pass: true,
+                        name: 'Backend Health',
+                        message: `Database: ${data.database}`
+                    };
+                } else {
+                    return {
+                        pass: false,
+                        name: 'Backend Health',
+                        message: JSON.stringify(data)
+                    };
+                }
+            } catch (error) {
+                return {
+                    pass: false,
+                    name: 'Backend Health',
+                    message: error.message
+                };
+            }
+        }
+
+        async function testLoginAsync(phone, password) {
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password }),
+                    credentials: 'omit'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    return {
+                        pass: true,
+                        name: 'Login Endpoint',
+                        message: `Token received (${data.access_token.substring(0, 20)}...)`
+                    };
+                } else {
+                    return {
+                        pass: false,
+                        name: 'Login Endpoint',
+                        message: data.error || 'Login failed'
+                    };
+                }
+            } catch (error) {
+                return {
+                    pass: false,
+                    name: 'Login Endpoint',
+                    message: error.message
+                };
+            }
+        }
+
+        function testBrowserStateCheck() {
+            const checks = {
+                'localStorage': typeof localStorage !== 'undefined',
+                'fetch': typeof fetch === 'function',
+                'JSON': typeof JSON !== 'undefined'
+            };
+            
+            const allPass = Object.values(checks).every(v => v);
+            
+            return {
+                pass: allPass,
+                name: 'Browser State',
+                message: JSON.stringify(checks)
+            };
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('corsResult');
+            resultDiv.innerHTML = '<div class="result-box result-info">Testing CORS...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'http://localhost:8000',
+                        'Access-Control-Request-Method': 'POST'
+                    }
+                });
+                
+                const headers = {
+                    'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+                    'access-control-allow-methods': response.headers.get('access-control-allow-methods'),
+                    'access-control-allow-headers': response.headers.get('access-control-allow-headers')
+                };
+                
+                resultDiv.innerHTML = `<div class="result-box result-success">✓ CORS OK\n${JSON.stringify(headers, null, 2)}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-box result-error">✗ CORS Error\n${error.message}</div>`;
+            }
+        }
+
+        async function testBackendHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.innerHTML = '<div class="result-box result-info">Testing backend...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="result-box result-success">✓ Backend OK\n${JSON.stringify(data, null, 2)}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-box result-error">✗ Backend Error\n${error.message}</div>`;
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            resultDiv.innerHTML = '<div class="result-box result-info">Testing login...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password }),
+                    credentials: 'omit'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result-box result-success">✓ Login Success\n\nToken (first 50 chars):\n${data.access_token.substring(0, 50)}...\n\nUser:\n${JSON.stringify(data.user, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-box result-error">✗ Login Failed\n${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-box result-error">✗ Login Error\n${error.message}\n\nStack:\n${error.stack}</div>`;
+            }
+        }
+
+        async function testLoginVerbose() {
+            const resultDiv = document.getElementById('loginResult');
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            resultDiv.innerHTML = '<div class="result-box result-info">Testing login (verbose)...</div>';
+            
+            try {
+                console.log('📡 Starting verbose login test');
+                console.log('Phone:', phone);
+                console.log('Password:', password.length + ' characters');
+                
+                const body = JSON.stringify({ phone, password });
+                console.log('Request body:', body);
+                
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body,
+                    credentials: 'omit'
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                console.log('Response headers:', {
+                    'content-type': response.headers.get('content-type'),
+                    'access-control-allow-origin': response.headers.get('access-control-allow-origin')
+                });
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result-box result-success">✓ SUCCESS\n${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-box result-error">✗ FAILED\n${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                console.error('Login test error:', error);
+                resultDiv.innerHTML = `<div class="result-box result-error">✗ ERROR\n${error.message}\n\nStack:\n${error.stack}</div>`;
+            }
+        }
+
+        function checkBrowserState() {
+            const resultDiv = document.getElementById('stateResult');
+            
+            const state = {
+                'Browser': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Online': navigator.onLine,
+                'localStorage': typeof localStorage,
+                'fetch': typeof fetch,
+                'Cookies': navigator.cookieEnabled,
+                'origin': window.location.origin
+            };
+            
+            resultDiv.innerHTML = `<div class="result-box result-info">${JSON.stringify(state, null, 2)}</div>`;
+        }
+
+        function showConsoleLogs() {
+            const resultDiv = document.getElementById('logsResult');
+            
+            if (consoleLogs.length === 0) {
+                resultDiv.innerHTML = '<div class="result-box result-info">No logs yet</div>';
+                return;
+            }
+            
+            let html = '<div class="result-box result-info">';
+            consoleLogs.slice(-20).forEach(log => {
+                const icon = log.type === 'error' ? '✗' : log.type === 'warn' ? '⚠' : 'ℹ';
+                html += `${icon} [${log.type.toUpperCase()}] ${log.msg}\n`;
+            });
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function clearConsoleLogs() {
+            consoleLogs = [];
+            document.getElementById('logsResult').innerHTML = '<div class="result-box result-info">Logs cleared</div>';
+        }
+
+        // Update checklist on page load
+        window.addEventListener('load', () => {
+            console.log('Test page loaded');
+        });
+    </script>
+</body>
+</html>

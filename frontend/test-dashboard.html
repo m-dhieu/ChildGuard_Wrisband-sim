@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChildGuard Dashboard - Test Mode</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        .test-banner {
+            background: #ff9800;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        #loginModal { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="test-banner">
+        🧪 TEST MODE - Dummy Data Active - Auto-Login Enabled
+    </div>
+    
+    <!-- Main Dashboard Content -->
+    <main id="dashboard" style="display: block;">
+        <div class="dashboard-grid">
+            <div class="card" id="vitalsCard">
+                <div class="card-header">
+                    <h3 data-i18n="vitals-title">📊 Vital Signs</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="vitalsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card" id="mapCard">
+                <div class="card-header">
+                    <h3 data-i18n="map-title">🗺️ GPS Location</h3>
+                </div>
+                <div class="card-body">
+                    <div id="map" style="height: 300px; border-radius: 8px;"></div>
+                </div>
+            </div>
+
+            <div class="card" id="statusCard">
+                <div class="card-header">
+                    <h3 data-i18n="status-title">⚠️ Status</h3>
+                </div>
+                <div class="card-body">
+                    <div id="statusIndicator" style="font-size: 24px; padding: 20px; text-align: center; border-radius: 8px; background: #e8f5e9;">
+                        <span id="statusText">🟢 SAFE</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="alertCard">
+                <div class="card-header">
+                    <h3 data-i18n="alert-title">🚨 Alerts</h3>
+                </div>
+                <div class="card-body">
+                    <div id="alertList" role="list" style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toolbar -->
+    <div style="position: fixed; top: 10px; right: 10px; z-index: 100; display: flex; gap: 10px;">
+        <button id="panicBtn" style="background: red; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            🆘 SOS
+        </button>
+        <button id="photoBtn" style="background: blue; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+            📷 Photo
+        </button>
+        <button id="configBtn" style="background: green; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+            ⚙️ Settings
+        </button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="i18n.js"></script>
+    <script src="dummy-data.js"></script>
+    <script src="test-runner.js"></script>
+    <script>
+        console.log('🧪 TEST DASHBOARD LOADED - Dummy Data Mode');
+        
+        // Mock Socket.io if needed
+        if (typeof io === 'undefined') {
+            console.log('📡 Socket.io not available, using local emission');
+            window.socket = {
+                emit: function(event, data) {
+                    console.log('📤 Socket event:', event, data);
+                },
+                on: function(event, callback) {
+                    console.log('📥 Socket listener:', event);
+                },
+                connected: true
+            };
+        }
+
+        // Initialize dashboard
+        const state = {
+            currentDevice: 'device1',
+            baselineHR: 70,
+            vitalsChart: null,
+            alerts: [],
+            isAlertActive: false,
+            geofenceRadius: 100
+        };
+
+        // Initialize Chart
+        function initChart() {
+            const ctx = document.getElementById('vitalsChart').getContext('2d');
+            state.vitalsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Heart Rate (BPM)',
+                            data: [],
+                            borderColor: '#2196F3',
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Acceleration (g)',
+                            data: [],
+                            borderColor: '#9C27B0',
+                            backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            min: 50,
+                            max: 150,
+                            title: { display: true, text: 'Heart Rate (BPM)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            min: 0,
+                            max: 5,
+                            title: { display: true, text: 'Acceleration (g)' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+            console.log('✅ Chart initialized');
+        }
+
+        // Update chart
+        function updateVitalsChart(hr, accel) {
+            if (!state.vitalsChart) return;
+            
+            const time = new Date().toLocaleTimeString();
+            state.vitalsChart.data.labels.push(time);
+            state.vitalsChart.data.datasets[0].data.push(hr);
+            state.vitalsChart.data.datasets[1].data.push(accel);
+            
+            // Keep last 20 points
+            if (state.vitalsChart.data.labels.length > 20) {
+                state.vitalsChart.data.labels.shift();
+                state.vitalsChart.data.datasets[0].data.shift();
+                state.vitalsChart.data.datasets[1].data.shift();
+            }
+            
+            state.vitalsChart.update('none');
+        }
+
+        // Update status indicator
+        function updateStatusIndicator(isDanger) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (isDanger) {
+                indicator.style.background = '#ffebee';
+                statusText.innerHTML = '🔴 DANGER';
+            } else {
+                indicator.style.background = '#e8f5e9';
+                statusText.innerHTML = '🟢 SAFE';
+            }
+        }
+
+        // Add alert
+        function addAlert(type, msg, hr) {
+            const alert = {
+                id: Date.now(),
+                type: type,
+                msg: msg,
+                hr: hr,
+                timestamp: new Date().toLocaleTimeString(),
+                status: 'pending'
+            };
+            
+            state.alerts.push(alert);
+            const alertList = document.getElementById('alertList');
+            
+            const alertEl = document.createElement('div');
+            alertEl.style.cssText = 'padding: 10px; margin: 5px 0; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 4px;';
+            alertEl.innerHTML = `
+                <strong>${type}</strong>: ${msg}<br>
+                <small>HR: ${hr} BPM | ${alert.timestamp}</small>
+                <button onclick="acknowledgeAlert(${alert.id})" style="margin-top: 5px; padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                    Acknowledge
+                </button>
+            `;
+            
+            alertList.insertBefore(alertEl, alertList.firstChild);
+            console.log('🚨 Alert added:', msg);
+        }
+
+        window.acknowledgeAlert = function(id) {
+            const alert = state.alerts.find(a => a.id === id);
+            if (alert) alert.status = 'acknowledged';
+            console.log('✅ Alert acknowledged');
+        };
+
+        // Initialize Map
+        function initMap() {
+            const map = L.map('map').setView([15.5007, 32.5599], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            window.marker = L.marker([15.5007, 32.5599]).addTo(map);
+            window.map = map;
+            console.log('✅ Map initialized');
+        }
+
+        // Listen for telemetry from dummy data
+        window.addEventListener('load', () => {
+            console.log('🎯 Initializing dashboard...');
+            initChart();
+            initMap();
+            
+            // Start dummy data emitter
+            startDummyDataEmitter(2000, 'device1');
+            
+            // Listen for telemetry events
+            setInterval(() => {
+                const telemetry = dummySimulator.getTelemetry('device1');
+                
+                // Update baseline
+                state.baselineHR = (state.baselineHR * 9 + telemetry.hr) / 10;
+                
+                // Update marker
+                if (window.marker) {
+                    window.marker.setLatLng([telemetry.gps.lat, telemetry.gps.lon]);
+                }
+                
+                // Check danger
+                const isDanger = telemetry.hr > state.baselineHR * 1.3 || telemetry.accel > 2.0;
+                updateStatusIndicator(isDanger);
+                
+                // Update chart
+                updateVitalsChart(telemetry.hr, telemetry.accel);
+                
+                // Create alert if danger
+                if (isDanger && !state.isAlertActive) {
+                    const alertType = telemetry.hr > state.baselineHR * 1.3 ? 'HR Spike' : 'High Accel';
+                    addAlert(alertType, `${alertType} detected!`, Math.round(telemetry.hr));
+                    state.isAlertActive = true;
+                } else if (!isDanger) {
+                    state.isAlertActive = false;
+                }
+            }, 2100); // Slightly longer than dummy data interval
+            
+            console.log('✅ Dashboard initialized - Dummy data streaming');
+        });
+
+        // Button handlers
+        document.getElementById('panicBtn').onclick = () => {
+            console.log('🆘 SOS Button Pressed');
+            addAlert('EMERGENCY', 'Emergency SOS activated!', Math.round(state.baselineHR));
+            updateStatusIndicator(true);
+        };
+
+        document.getElementById('photoBtn').onclick = () => {
+            console.log('📷 Photo Button Pressed');
+            alert('Photo capture dialog would open here');
+        };
+
+        document.getElementById('configBtn').onclick = () => {
+            console.log('⚙️ Settings Button Pressed');
+            alert('Settings dialog would open here');
+        };
+    </script>
+</body>
+</html>

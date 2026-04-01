@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChildGuard Login Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        .test-section h3 {
+            margin-top: 0;
+        }
+        input {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        .info { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+    </style>
+</head>
+<body>
+    <h1>🔧 ChildGuard Login Debug Console</h1>
+    
+    <div class="test-section">
+        <h3>1. Test Backend Connection</h3>
+        <button onclick="testBackendHealth()">Test /health Endpoint</button>
+        <div id="healthResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Login Endpoint</h3>
+        <label>Phone:</label>
+        <input type="text" id="testPhone" value="+249123456789" placeholder="Phone number">
+        <label>Password:</label>
+        <input type="password" id="testPassword" value="admin123" placeholder="Password">
+        <button onclick="testLoginEndpoint()">Test Login</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Check Frontend Code</h3>
+        <button onclick="checkFrontendCode()">Check Script State</button>
+        <div id="codeResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Check LocalStorage</h3>
+        <button onclick="checkLocalStorage()">Check LocalStorage</button>
+        <div id="storageResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Check Console Logs</h3>
+        <button onclick="captureConsoleLogs()">Capture Latest Logs</button>
+        <div id="logsResult"></div>
+    </div>
+
+    <script>
+        let capturedLogs = [];
+
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            capturedLogs.push({ type: 'log', message: args.join(' ') });
+            originalLog.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            capturedLogs.push({ type: 'error', message: args.join(' ') });
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            capturedLogs.push({ type: 'warn', message: args.join(' ') });
+            originalWarn.apply(console, args);
+        };
+
+        async function testBackendHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.innerHTML = '<div class="result info">Testing backend health...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Backend is healthy!\n${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Backend returned error (${response.status})\n${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Failed to reach backend: ${error.message}</div>`;
+            }
+        }
+
+        async function testLoginEndpoint() {
+            const resultDiv = document.getElementById('loginResult');
+            const phone = document.getElementById('testPhone').value;
+            const password = document.getElementById('testPassword').value;
+            
+            resultDiv.innerHTML = '<div class="result info">Testing login with phone: ' + phone + '</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Login successful!\n\nToken (first 50 chars): ${data.access_token.substring(0, 50)}...\n\nUser: ${JSON.stringify(data.user, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Login failed (${response.status}):\n${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Request failed: ${error.message}\n\nCheck browser console for more details.</div>`;
+            }
+        }
+
+        function checkFrontendCode() {
+            const resultDiv = document.getElementById('codeResult');
+            let html = '<div class="result info">Frontend Status:\n';
+            
+            // Check if authState exists
+            if (typeof authState !== 'undefined') {
+                html += `✅ authState exists\n`;
+                html += `   - isAuthenticated: ${authState.isAuthenticated}\n`;
+                html += `   - token: ${authState.token ? authState.token.substring(0, 20) + '...' : 'null'}\n`;
+                html += `   - user: ${authState.user ? 'exists' : 'null'}\n`;
+                html += `   - apiBase: ${authState.apiBase}\n`;
+            } else {
+                html += `❌ authState not found!\n`;
+            }
+            
+            // Check if functions exist
+            html += `\n✅ login function: ${typeof login === 'function' ? 'exists' : 'missing'}\n`;
+            html += `✅ checkAuthentication function: ${typeof checkAuthentication === 'function' ? 'exists' : 'missing'}\n`;
+            html += `✅ logout function: ${typeof logout === 'function' ? 'exists' : 'missing'}\n`;
+            
+            // Check DOM elements
+            html += `\n✅ loginModal DOM: ${document.getElementById('loginModal') ? 'exists' : 'missing'}\n`;
+            html += `✅ loginForm DOM: ${document.getElementById('loginForm') ? 'exists' : 'missing'}\n`;
+            html += `✅ loginError DOM: ${document.getElementById('loginError') ? 'exists' : 'missing'}\n`;
+            html += `✅ dashboard-container DOM: ${document.querySelector('.dashboard-container') ? 'exists' : 'missing'}\n`;
+            
+            // Modal visibility
+            const modal = document.getElementById('loginModal');
+            if (modal) {
+                html += `\n📍 Modal display style: ${modal.style.display}\n`;
+                html += `📍 Modal computed display: ${window.getComputedStyle(modal).display}\n`;
+            }
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function checkLocalStorage() {
+            const resultDiv = document.getElementById('storageResult');
+            let html = '<div class="result info">LocalStorage Status:\n';
+            
+            const token = localStorage.getItem('auth_token');
+            const user = localStorage.getItem('user_data');
+            
+            html += `Token stored: ${token ? 'YES (' + token.substring(0, 20) + '...)' : 'NO'}\n`;
+            html += `User stored: ${user ? 'YES' : 'NO'}\n`;
+            
+            if (user) {
+                try {
+                    const userData = JSON.parse(user);
+                    html += `User data: ${JSON.stringify(userData, null, 2)}\n`;
+                } catch (e) {
+                    html += `❌ User data is corrupted JSON\n`;
+                }
+            }
+            
+            html += '\nAll localStorage keys:\n';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                html += `  ${key}: ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}\n`;
+            }
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function captureConsoleLogs() {
+            const resultDiv = document.getElementById('logsResult');
+            
+            if (capturedLogs.length === 0) {
+                resultDiv.innerHTML = '<div class="result info">No logs captured yet. Try interacting with the page.</div>';
+                return;
+            }
+            
+            let html = '<div class="result info">Recent Console Logs (last 20):\n\n';
+            const recent = capturedLogs.slice(-20);
+            recent.forEach(log => {
+                const emoji = log.type === 'error' ? '❌' : log.type === 'warn' ? '⚠️' : 'ℹ️';
+                html += `${emoji} [${log.type.toUpperCase()}] ${log.message}\n`;
+            });
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        // Initial checks
+        window.addEventListener('load', () => {
+            console.log('Debug page loaded');
+            checkFrontendCode();
+        });
+    </script>
+</body>
+</html>

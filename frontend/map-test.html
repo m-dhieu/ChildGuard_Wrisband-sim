@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Map Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        #map { width: 100%; height: 500px; border: 2px solid #333; margin: 20px 0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .info { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .error { background: #ffebee; padding: 20px; border-radius: 8px; margin: 20px 0; color: #c62828; }
+        .success { background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Leaflet Map Test</h1>
+        
+        <div class="info">
+            <h2>Testing Leaflet.js Map Library</h2>
+            <p>This page tests if Leaflet maps work in your browser.</p>
+        </div>
+
+        <h3>Test 1: Basic Map</h3>
+        <div id="map"></div>
+        <div id="mapStatus"></div>
+
+        <h3>Test 2: Map with Marker</h3>
+        <div id="map2" style="width: 100%; height: 300px; border: 2px solid #333; margin: 20px 0;"></div>
+        <div id="map2Status"></div>
+
+        <h3>Diagnostics</h3>
+        <div id="diagnostics"></div>
+    </div>
+
+    <script>
+        console.log('📍 Map test started');
+
+        // Check Leaflet is loaded
+        if (typeof L === 'undefined') {
+            document.getElementById('mapStatus').innerHTML = '<div class="error">❌ Leaflet library not loaded</div>';
+            document.getElementById('diagnostics').innerHTML = '<div class="error">Leaflet object not found in window</div>';
+        } else {
+            document.getElementById('mapStatus').innerHTML = '<div class="success">✓ Leaflet loaded</div>';
+            console.log('✓ Leaflet version:', L.version);
+
+            try {
+                // Test 1: Create map
+                const map = L.map('map').setView([15.5, 32.5], 12);
+                console.log('✓ Map created');
+
+                // Add tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+                console.log('✓ Tile layer added');
+
+                // Add a marker
+                L.marker([15.5, 32.5]).addTo(map)
+                    .bindPopup('Test Location')
+                    .openPopup();
+                console.log('✓ Marker added');
+
+                document.getElementById('mapStatus').innerHTML += '<div class="success">✓ Map successfully rendered!</div>';
+            } catch (error) {
+                console.error('Map error:', error);
+                document.getElementById('mapStatus').innerHTML += `<div class="error">❌ Map error: ${error.message}</div>`;
+            }
+
+            try {
+                // Test 2: Another map
+                const map2 = L.map('map2').setView([0, 0], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap',
+                    maxZoom: 19
+                }).addTo(map2);
+                
+                L.marker([0, 0]).addTo(map2).bindPopup('Equator');
+                L.marker([51.5, -0.09]).addTo(map2).bindPopup('London');
+                L.marker([40.7, -74.0]).addTo(map2).bindPopup('New York');
+                
+                document.getElementById('map2Status').innerHTML = '<div class="success">✓ Second map with multiple markers rendered!</div>';
+            } catch (error) {
+                console.error('Map2 error:', error);
+                document.getElementById('map2Status').innerHTML = `<div class="error">❌ Map2 error: ${error.message}</div>`;
+            }
+        }
+
+        // Show diagnostics
+        document.getElementById('diagnostics').innerHTML = `
+            <div class="info">
+                <strong>Browser Information:</strong><br>
+                User Agent: ${navigator.userAgent}<br>
+                Online: ${navigator.onLine ? 'Yes' : 'No'}<br>
+                Leaflet Loaded: ${typeof L !== 'undefined' ? 'Yes' : 'No'}<br>
+                Leaflet Version: ${typeof L !== 'undefined' ? L.version : 'N/A'}<br>
+                <br>
+                <strong>Open DevTools (F12) → Console to see more details</strong>
+            </div>
+        `;
+
+        // Log all window objects related to maps
+        console.log('Window.L:', typeof L);
+        console.log('Window.L.map:', typeof L?.map);
+        console.log('Window.L.tileLayer:', typeof L?.tileLayer);
+        console.log('Window.L.marker:', typeof L?.marker);
+    </script>
+</body>
+</html>
